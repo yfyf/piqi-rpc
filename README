@@ -1,7 +1,7 @@
 -----------------------Spil Games Specifics------------------------------
 Owned by: Thijs Terlouw
-Latest check: 2012/04/04
-Latest available: 20120404_upgraded_deps
+Latest check: 2012/04/05
+Latest available: 20120405_alavrik_dev
 -------------------------------------------------------------------------
 
 Piqi-RPC is a multi-format RPC-over-HTTP system for Erlang. It provides a
