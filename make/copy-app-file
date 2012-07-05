@@ -1,0 +1,12 @@
+#!/bin/sh
+
+set -e
+
+if [ -z "$REBAR_DEPS_DIR" ]
+then
+        echo "rebar deps dir not set. can't fix up piqi_rpc app file." 1>&2
+        exit 1
+fi
+
+cp -f $REBAR_DEPS_DIR/piqi_src/piqi-rpc/src/piqi_rpc.app ebin/
+
