@@ -8,5 +8,6 @@ then
         exit 1
 fi
 
-cp -f $REBAR_DEPS_DIR/piqi_src/piqi-rpc/src/piqi_rpc.app ebin/
+VERSION=$(git describe --always --tags `git log -n 1 --pretty=format:%h .`)
 
+sed  "s/vsn, git/vsn, \"${VERSION}\"/"  $REBAR_DEPS_DIR/piqi_src/piqi-rpc/src/piqi_rpc.app.src > ebin/piqi_rpc.app
