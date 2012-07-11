@@ -21,6 +21,8 @@ fi
 export REBAR_DEPS_DIR
 
 
+RESOLVED_SRC_DIR="`readlink -f ${REBAR_DEPS_DIR}/piqi_src/piqi-rpc/src`" 
+
 rm -f src
-ln -sf $REBAR_DEPS_DIR/piqi_src/piqi-rpc/src
+ln -sf $RESOLVED_SRC_DIR
 
