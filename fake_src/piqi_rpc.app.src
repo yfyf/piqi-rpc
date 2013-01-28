@@ -2,5 +2,6 @@
  [{description, "Fake .app file to make rebar happy"},
   {vsn, git},
   {modules, []},
+  {mod, [fake_piqi_rpc_module_should_not_be_called]},
   {applications, [kernel, stdlib]},
   {env, []}]}.
