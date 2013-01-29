@@ -7,5 +7,7 @@ if [ -n "`grep fake_module_piqi ebin/piqi_rpc.app`" ]; then
         deps="" \
         pre_hooks="" \
         post_hooks="" \
-        deps_dir=$REBAR_DEPS_DIR
+        deps_dir=$REBAR_DEPS_DIR | grep -v "not understood or not applicable"
+        # rebar produces that error message for some reason although
+        # everything the variables ARE used.
 fi
