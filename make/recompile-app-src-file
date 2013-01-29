@@ -1,4 +1,11 @@
-#!/bin/sh
+#!/bin/bash
 
-test -f .app_src_recompiled || \
-    (touch .app_src_recompiled && rebar compile skip_deps=true)
+set -e
+
+if [ -n "`grep fake_module_piqi ebin/piqi_rpc.app`" ]; then
+    rebar compile \
+        deps="" \
+        pre_hooks="" \
+        post_hooks="" \
+        deps_dir=$REBAR_DEPS_DIR
+fi
