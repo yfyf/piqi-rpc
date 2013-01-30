@@ -3,11 +3,7 @@
 set -e
 
 if [ -n "`grep fake_module_piqi ebin/piqi_rpc.app`" ]; then
-    rebar compile \
-        deps="" \
-        pre_hooks="" \
-        post_hooks="" \
-        deps_dir=$REBAR_DEPS_DIR | grep -v "not understood or not applicable"
-        # rebar produces that error message for some reason although
-        # everything the variables ARE used.
+    # pass an empty file as config so that no hooks are executed on the second
+    # recompile
+    rebar compile --config "/dev/null" deps_dir=$REBAR_DEPS_DIR
 fi
