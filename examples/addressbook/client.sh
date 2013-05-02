@@ -5,7 +5,7 @@ set -x -e
 
 if [ -z "$PIQI" ]
 then
-	PIQI=deps/piqi/priv/piqi-binary/"`uname -s`-`uname -m`"/piqi
+	PIQI=piqi
 fi
 
 
