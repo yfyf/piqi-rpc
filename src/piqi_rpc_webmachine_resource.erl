@@ -137,10 +137,8 @@ known_content_type(ReqData, Context) ->
                 undefined -> <<>>;
                 BodyParm -> list_to_binary(BodyParm)
             end;
-        'POST' ->
-            wrq:req_body(ReqData);
-        _ -> 
-            'undefined'
+        _ ->
+            wrq:req_body(ReqData)
     end,
     ContentType = get_primary_header_value(
         wrq:get_req_header("content-type", ReqData)),
@@ -194,10 +192,7 @@ content_types_provided(ReqData, Context = #context { request_body = Body }) ->
                 ];
             'GET' ->
                 [
-                    {"text/plain", process_get},
-                    {"application/json", process_get},
-                    {"application/xml", process_get},
-                    {"application/x-protobuf", process_get}
+                    {"application/json", process_get}
                 ];
             'POST' ->
                 [
