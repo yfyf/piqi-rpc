@@ -27,12 +27,10 @@
 % @doc start Piqi-RPC
 start() ->
     ensure_started(piqi),
-    ensure_started(inets), % inets is listed as a mochiweb dependency
+    ensure_started(ranch),
     ensure_started(crypto),
-    ensure_started(mochiweb),
-    ensure_started(webmachine),
+    ensure_started(cowboy),
     application:start(piqi_rpc).
-
 
 % @doc stop Piqi-RPC
 stop() ->
@@ -49,9 +47,9 @@ stop() ->
 % @doc stop Piqi-RPC and all dependencies that may have been started by start/0
 stop_all() ->
     Res = stop(),
-    application:stop(webmachine),
-    application:stop(mochiweb),
+    application:stop(cowboy),
     application:stop(crypto),
+    application:stop(ranch),
     application:stop(piqi),
     Res.
 
@@ -79,10 +77,10 @@ add_service(RpcServiceDef) ->
     % atomic service addition to both piqi_rpc_monitor and piqi_rpc_http
     try
         % adding Piqi-RPC service first, then adding HTTP resource binding
-        ok = piqi_rpc_monitor:add_service(RpcService),
-        ok = piqi_rpc_http:add_service(RpcService),
         ServiceDefs = get_service_defs(),
-        ok = set_service_defs([RpcService | ServiceDefs])
+        ok = set_service_defs([RpcService | ServiceDefs]),
+        ok = piqi_rpc_monitor:add_service(RpcService),
+        ok = piqi_rpc_http:add_service(RpcService)
     catch
         Class:Reason ->
             catch remove_service(RpcServiceDef),
@@ -95,10 +93,10 @@ add_service(RpcServiceDef) ->
 remove_service(RpcServiceDef) ->
     RpcService = normalize_service_def(RpcServiceDef),
     % removing HTTP resource binding first, then removing Piqi-RPC service
-    ok = piqi_rpc_http:remove_service(RpcService),
-    ok = piqi_rpc_monitor:remove_service(RpcService),
     ServiceDefs = get_service_defs(),
-    ok = set_service_defs(ServiceDefs -- [RpcServiceDef]).
+    ok = set_service_defs(ServiceDefs -- [RpcServiceDef]),
+    ok = piqi_rpc_monitor:remove_service(RpcService),
+    ok = piqi_rpc_http:remove_service(RpcService).
 
 
 -spec get_services/0 :: () -> [piqi_rpc_service()].

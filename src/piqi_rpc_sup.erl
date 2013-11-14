@@ -13,7 +13,7 @@
 %% limitations under the License.
 
 %%
-%% @doc OTP supervisor behavior for Piqi-RPC 
+%% @doc OTP supervisor behavior for Piqi-RPC
 %%
 -module(piqi_rpc_sup).
 
@@ -43,12 +43,12 @@ init(_Args) ->
             [piqi_rpc_monitor]
         },
 
-    PiqiRpcMochiweb =
+    PiqiRpcWebServer =
         {piqi_rpc_http, % Piqi-RPC http server
             {piqi_rpc_http, start_link, []},
             permanent, 5000, worker,
             dynamic % XXX
         },
 
-    {ok, {{one_for_one, 1, 60}, [PiqiRpcMonitor, PiqiRpcMochiweb]}}.
+    {ok, {{one_for_one, 1, 60}, [PiqiRpcMonitor, PiqiRpcWebServer]}}.
 

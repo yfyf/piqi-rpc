@@ -21,77 +21,74 @@
 -module(piqi_rpc_http).
 
 -export([start_link/0, cleanup/0]).
--export([add_service/1, remove_service/1]).
+-export([add_service/1, remove_service/1, configure/0]).
 %-compile(export_all).
 
+-define(DEFAULT_PORT, 8080).
+-define(DEFAULT_NAME, piqi_rpc_server).
 
 -include("piqi_rpc.hrl").
 
-
 start_link() ->
+    Routes = get_cowboy_routes(),
+    cowboy:start_http(get_http_env(name, ?DEFAULT_NAME), get_http_env(nb_acceptors, 100),
+        [{port, get_http_env(port, ?DEFAULT_PORT)}],
+        [{env, [{dispatch, Routes}]}]
+    ).
+
+configure() ->
+    Routes = get_cowboy_routes(),
+    cowboy:set_env(get_http_env(name, ?DEFAULT_NAME), dispatch, Routes).
+
+get_cowboy_routes() ->
     RpcServices = piqi_rpc:get_services(),
-    Config = make_webmachine_config(RpcServices),
-    % this function eventually calls mochiweb_http:start(Config) which starts
-    % mochiweb_socket_server using gen_server:start_link()
-    webmachine_mochiweb:start(Config).
+    Routes = [ rpc_service_to_cowboy_route(X) || X <- RpcServices ],
+    Dispatch = [
+        {'_', lists:flatten(Routes)}
+    ],
+    cowboy_router:compile(Dispatch).
 
+rpc_service_to_cowboy_route(_RpcService = {ImplMod, RpcMod, UrlPath, Options}) ->
+    LAdjustedPath = case string:left(UrlPath, 1) of
+        "/" -> UrlPath;
+        _ -> "/" ++ UrlPath
+    end,
+    AdjustedPath = case string:right(LAdjustedPath, 1) of
+        "/" -> LAdjustedPath;
+        _ -> LAdjustedPath ++ "/"
+    end,
+    PathMatch = AdjustedPath ++ ":function/[...]",
+    [
+        {PathMatch, piqi_rpc_resource, {ImplMod, RpcMod, make_service_options(Options)}},
+        {AdjustedPath, piqi_rpc_resource, {ImplMod, RpcMod, make_service_options(Options)}}
+    ].
 
-make_webmachine_config(RpcServices) ->
-    Config0 = get_env('http_server'),
-    Config1 =
-        case proplists:get_value('enable_access_logger', Config0) of
-            true ->
-                application:set_env(
-                    webmachine, webmachine_logger_module, webmachine_logger),
-                proplists:delete('enable_access_logger', Config0);
-            _ ->
-                application:unset_env(webmachine, webmachine_logger_module),
-                Config0
-        end,
-    Dispatch = [ rpc_service_to_webmachine_route(X) || X <- RpcServices ],
-    [ {dispatch, Dispatch} | Config1 ].
-
-
-% @hidden
-get_env(Key) ->
-    case application:get_env(piqi_rpc, Key) of
-        {ok, X} -> X;
-        'undefined' -> []
-    end.
-
-
-% unregister all Piqi-RPC services from Webmachine when stopping Piqi-RPC
-% applicaton (called from piqi_rpc_app:stop/1)
+% backward compatibility
 cleanup() ->
-    RpcServices = piqi_rpc:get_services(),
-    lists:foreach(fun remove_service/1, RpcServices).
-
+    cowboy:set_env(get_http_env(name, ?DEFAULT_NAME), dispatch, []).
 
 -spec add_service/1 :: ( piqi_rpc_service() ) -> ok.
-
-add_service(RpcService = {_ImplMod, _RpcMod, _UrlPath, _Options}) ->
-    Route = rpc_service_to_webmachine_route(RpcService),
-    ok = webmachine_router:add_route(Route).
-
+add_service(_RpcService = {_ImplMod, _RpcMod, _UrlPath, _Options}) ->
+    configure().
 
 -spec remove_service/1 :: ( piqi_rpc_service() ) -> ok.
+remove_service(_RpcService = {_ImplMod, _RpcMod, _UrlPath, _Options}) ->
+    configure().
 
-remove_service(RpcService = {_ImplMod, _RpcMod, _UrlPath, _Options}) ->
-    Route = rpc_service_to_webmachine_route(RpcService),
-    ok = webmachine_router:remove_route(Route).
+% Utility
+get_http_env(Key, Default) ->
+    case proplists:get_value(Key, get_env(piqi_rpc, http_server, [])) of
+        undefined -> Default;
+        Value -> Value
+    end.
 
+get_env(App, Key, Default) ->
+    case application:get_env(App, Key) of
+        undefined -> Default;
+        {ok, Value} -> Value
+    end.
 
-% see Webmachine documentation and webmachine_route.erl for format description.
--type webmachine_route() :: {_, _, _}.
-
--spec rpc_service_to_webmachine_route/1 :: (
-    piqi_rpc_service() ) -> webmachine_route().
-
-% @hidden
-% make a Webmachine route from a Piqi-RPC service definition
-rpc_service_to_webmachine_route(_RpcService = {ImplMod, RpcMod, UrlPath, Options}) ->
-    % { PathPattern, WebmachineResource, InitArguments}
-    PathElements = string:tokens(UrlPath, "/"),
-    PathSpec = PathElements ++ ['*'],
-    {PathSpec, piqi_rpc_webmachine_resource, [ImplMod, RpcMod, Options]}.
-
+make_service_options(Options) ->
+    DefaultOpts = get_env(piqi_rpc, 'default_service_options', []),
+    ReturnDefinition = get_env(piqi_rpc, 'return_definition', false),
+    Options ++ [{return_definition, ReturnDefinition}] ++ DefaultOpts.
