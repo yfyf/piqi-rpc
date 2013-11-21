@@ -35,8 +35,8 @@
 
 
 call(Mod, Name, Input) ->
-    ?PRINT({call, Mod, Name, Input}),
-    check_function_exported(Mod, Name, 1),
+%    ?PRINT({call, Mod, Name, Input}),
+%    check_function_exported(Mod, Name, 1),
     Mod:Name(Input).
 
 

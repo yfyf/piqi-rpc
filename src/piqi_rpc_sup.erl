@@ -36,13 +36,6 @@ start_link() ->
 %
 
 init(_Args) ->
-    PiqiRpcMonitor =
-        {piqi_rpc_monitor,
-            {piqi_rpc_monitor, start_link, []},
-            permanent, 1000, worker,
-            [piqi_rpc_monitor]
-        },
-
     PiqiRpcWebServer =
         {piqi_rpc_http, % Piqi-RPC http server
             {piqi_rpc_http, start_link, []},
@@ -50,5 +43,5 @@ init(_Args) ->
             dynamic % XXX
         },
 
-    {ok, {{one_for_one, 1, 60}, [PiqiRpcMonitor, PiqiRpcWebServer]}}.
+    {ok, {{one_for_one, 1, 60}, [PiqiRpcWebServer]}}.
 

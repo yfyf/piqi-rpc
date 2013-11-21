@@ -107,7 +107,7 @@
             % {enable_perf_logger, true},
 
             % Erlang local name for the HTTP server
-            {name, piqi_rpc_mochiweb}
+            {name, piqi_rpc_http_server}
         ]}
     ]}
 ]}.
