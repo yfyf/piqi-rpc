@@ -135,7 +135,7 @@ get_output_format(InputFormat, Req) ->
         {ok, undefined, Req2} ->
             {InputFormat, Req2};
         {ok, AcceptList, Req2} ->
-            Formats = [content_type_to_format(Type, SubType) || {{Type, SubType, _}, _, _} <- AcceptList],
+            Formats = [content_type_to_format(Type, SubType, InputFormat) || {{Type, SubType, _}, _, _} <- AcceptList],
             case lists:member(InputFormat, Formats) of
                 true -> {InputFormat, Req2};
                 false -> [First | _] = Formats, {First, Req2}
@@ -168,11 +168,17 @@ reply(Code, Headers, Body, Req, State) ->
     {ok, Req2} = cowboy_req:reply(Code, Headers, Body, Req),
     {ok, Req2, State}.
 
+content_type_to_format(Type, SubType, Default) ->
+    case content_type_to_format(Type, SubType) of
+        any -> Default;
+        Format -> Format
+    end.
+
 content_type_to_format(<<"text">>, <<"plain">>) -> piq;
 content_type_to_format(<<"application">>, <<"xml">>) -> xml;
 content_type_to_format(<<"application">>, <<"json">>) -> json;
 content_type_to_format(<<"application">>, <<"x-protobuf">>) -> pb;
-content_type_to_format(_, _) -> undefined.
+content_type_to_format(<<"*">>, <<"*">>) -> any.
 
 format_to_content_type('pb') -> {<<"Content-Type">>, <<"application/x-protobuf">>};
 format_to_content_type('json') -> {<<"Content-Type">>, <<"application/json">>};
