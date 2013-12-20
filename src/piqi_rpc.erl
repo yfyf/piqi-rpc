@@ -27,12 +27,10 @@
 % @doc start Piqi-RPC
 start() ->
     ensure_started(piqi),
-    ensure_started(inets), % inets is listed as a mochiweb dependency
+    ensure_started(ranch),
     ensure_started(crypto),
-    ensure_started(mochiweb),
-    ensure_started(webmachine),
+    ensure_started(cowboy),
     application:start(piqi_rpc).
-
 
 % @doc stop Piqi-RPC
 stop() ->
@@ -49,9 +47,9 @@ stop() ->
 % @doc stop Piqi-RPC and all dependencies that may have been started by start/0
 stop_all() ->
     Res = stop(),
-    application:stop(webmachine),
-    application:stop(mochiweb),
+    application:stop(cowboy),
     application:stop(crypto),
+    application:stop(ranch),
     application:stop(piqi),
     Res.
 
@@ -62,60 +60,52 @@ ensure_started(App) ->
         {error, {already_started, App}} -> ok
     end.
 
-
 -spec normalize_service_def/1 :: ( piqi_rpc_service_def() ) -> piqi_rpc_service().
-
 normalize_service_def(RpcService = {_ImplMod, _RpcMod, _UrlPath, _Options}) ->
     RpcService;
-
 normalize_service_def(_RpcServiceDef = {ImplMod, RpcMod, UrlPath}) ->
     _RpcService = {ImplMod, RpcMod, UrlPath, _Options = []}.
 
 
 -spec add_service/1 :: ( piqi_rpc_service_def() ) -> ok.
-
 add_service(RpcServiceDef) ->
     RpcService = normalize_service_def(RpcServiceDef),
     % atomic service addition to both piqi_rpc_monitor and piqi_rpc_http
     try
         % adding Piqi-RPC service first, then adding HTTP resource binding
-        ok = piqi_rpc_monitor:add_service(RpcService),
-        ok = piqi_rpc_http:add_service(RpcService),
-        ServiceDefs = get_service_defs(),
-        ok = set_service_defs([RpcService | ServiceDefs])
+        ok = check_modules(RpcService),
+        ok = add_service_def(RpcService),
+        ok = piqi_rpc_http:configure()
     catch
         Class:Reason ->
-            catch remove_service(RpcServiceDef),
+            catch remove_service(RpcService),
             erlang:raise(Class, Reason, erlang:get_stacktrace())
     end.
 
-
 -spec remove_service/1 :: ( piqi_rpc_service_def() ) -> ok.
-
 remove_service(RpcServiceDef) ->
     RpcService = normalize_service_def(RpcServiceDef),
-    % removing HTTP resource binding first, then removing Piqi-RPC service
-    ok = piqi_rpc_http:remove_service(RpcService),
-    ok = piqi_rpc_monitor:remove_service(RpcService),
-    ServiceDefs = get_service_defs(),
-    ok = set_service_defs(ServiceDefs -- [RpcServiceDef]).
-
+    ok = remove_service_def(RpcService),
+    ok = piqi_rpc_http:configure().
 
 -spec get_services/0 :: () -> [piqi_rpc_service()].
 get_services() ->
-    [normalize_service_def(X) || X <- get_service_defs()].
-
+    [Def || {_Url, Def} <- get_service_defs()].
 
 -spec get_service_defs/0 :: () -> [piqi_rpc_service_def()].
 get_service_defs() ->
     get_env('rpc_services').
 
+-spec add_service_def/1 :: (piqi_rpc_service_def()) -> ok.
+add_service_def(RpcService = {_, _, UrlPath, _}) ->
+    Services = get_service_defs(),
+    false = proplists:is_defined(UrlPath, Services),
+    set_env('rpc_services', [{UrlPath, RpcService} | Services]).
 
--spec set_service_defs/1 :: ( [piqi_rpc_service_def()] ) -> ok.
-% @hidden
-set_service_defs(RpcServiceDefs) ->
-    set_env('rpc_services', RpcServiceDefs).
-
+-spec remove_service_def/1 :: (piqi_rpc_service_def()) -> ok.
+remove_service_def({_, _, UrlPath, _}) ->
+    Services = get_service_defs(),
+    set_env('rpc_services', proplists:delete(UrlPath, Services)).
 
 % @hidden
 get_env(Key) ->
@@ -124,8 +114,30 @@ get_env(Key) ->
         'undefined' -> []
     end.
 
-
 % @hidden
 set_env(Key, Value) ->
     ok = application:set_env(piqi_rpc, Key, Value).
 
+check_modules({ImplMod, RpcMod, _, _}) ->
+    ok = ensure_loaded(ImplMod),
+    ok = ensure_loaded(RpcMod),
+    lists:foldl(
+        fun(Name, Acc) ->
+            case {erlang:function_exported(ImplMod, Name, 1), Acc} of
+                {true, Acc} ->
+                    Acc;
+                {false, {error, {function_not_exported, L}}} ->
+                    {error, {function_not_exported, [{ImplMod, Name} | L]}};
+                {false, _} ->
+                    {error, {function_not_exported, [{ImplMod, Name}]}}
+            end
+        end,
+        ok,
+        RpcMod:get_functions()
+    ).
+
+ensure_loaded(Mod) ->
+    case code:ensure_loaded(Mod) of
+        {module, Mod} -> ok;
+        E -> E
+    end.

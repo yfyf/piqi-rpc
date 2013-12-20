@@ -26,17 +26,12 @@
 
 -include_lib("piqi/include/piqi_rpc_piqi.hrl").
 
-
-%-define(DEBUG, 1).
 -include("debug.hrl").
-
 
 % TODO: -specs, doc
 
 
 call(Mod, Name, Input) ->
-    ?PRINT({call, Mod, Name, Input}),
-    check_function_exported(Mod, Name, 1),
     Mod:Name(Input).
 
 

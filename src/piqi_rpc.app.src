@@ -4,13 +4,16 @@
     {modules, []},
     {registered, [piqi_rpc_monitor, piqi_rpc_sup]},
     {applications, [
-        kernel,stdlib,
+        kernel,
+        stdlib,
         piqi,
-        crypto, mochiweb,  % XXX: do we really need to specify these?
-        webmachine
+        crypto,
+        ranch,
+        cowboy
     ]},
     {mod, {piqi_rpc_app, []}},
     {env, [
+        {return_definition, true},
         % The list of Piqi-RPC services definitions, where each entry has the
         % following format:
         %
@@ -104,7 +107,7 @@
             % {enable_perf_logger, true},
 
             % Erlang local name for the HTTP server
-            {name, piqi_rpc_mochiweb}
+            {name, piqi_rpc_http_server}
         ]}
     ]}
 ]}.

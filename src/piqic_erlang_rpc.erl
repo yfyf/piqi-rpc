@@ -66,6 +66,7 @@ gen_rpc_erl(Piqi) ->
         ],
         gen_embedded_piqi(ErlMod),
         gen_get_piqi(ErlMod),
+        gen_get_functions(FuncList),
         gen_server_stubs(Mod, ErlMod, FuncList)
     ]),
     ok = piqic:write_file(Filename, Code).
@@ -75,6 +76,14 @@ gen_embedded_piqi(ErlMod) ->
     [
         "piqi() ->\n",
         "    ", ErlMod, ":piqi().\n"
+    ].
+
+gen_get_functions(FuncList) ->
+    FuncNames = [ "    " ++ ErlName || #func{erlang_name = ErlName} <- FuncList],
+    [
+        "get_functions() -> [\n",
+            iod(",\n", FuncNames), "\n",
+        "].\n"
     ].
 
 
