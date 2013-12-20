@@ -26,7 +26,7 @@ handle(Req, State = #rpc_state{status=active}) ->
     {Method, Req2} = cowboy_req:method(Req),
     handle(Method, Req2, State);
 handle(Req, State = #rpc_state{status=_}) ->
-    reply(503, [format_to_content_type('text')], <<"service unavailable">>, Req, State).
+    reply(503, [], <<"service unavailable">>, Req, State).
 
 terminate(_Reason, _Req, _State) ->
     ok.
@@ -61,10 +61,10 @@ handle(<<"POST">>, Req, State) ->
                     reply(Code, [], Message, Req2, State)
             end;
         {error, Reason} ->
-            reply(400, [format_to_content_type('text')], <<"invalid input">>, Req, State)
+            reply(400, [], <<"invalid input">>, Req, State)
     end;
 handle(_Method, Req, State) ->
-    reply(405, [format_to_content_type('text')], <<"method not allowed">>, Req, State).
+    reply(405, [], <<"method not allowed">>, Req, State).
 
 get_piqi(Req, State = #rpc_state{rpc_mod = RpcMod, options = Options}, OutputFormat) ->
     case proplists:get_value('return_definition', Options, false) of
@@ -178,7 +178,8 @@ content_type_to_format(<<"text">>, <<"plain">>) -> piq;
 content_type_to_format(<<"application">>, <<"xml">>) -> xml;
 content_type_to_format(<<"application">>, <<"json">>) -> json;
 content_type_to_format(<<"application">>, <<"x-protobuf">>) -> pb;
-content_type_to_format(<<"*">>, <<"*">>) -> any.
+content_type_to_format(<<"*">>, <<"*">>) -> any;
+content_type_to_format(_, _) -> undefined.
 
 format_to_content_type('pb') -> {<<"Content-Type">>, <<"application/x-protobuf">>};
 format_to_content_type('json') -> {<<"Content-Type">>, <<"application/json">>};

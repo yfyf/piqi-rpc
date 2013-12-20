@@ -121,14 +121,23 @@ set_env(Key, Value) ->
 check_modules({ImplMod, RpcMod, _, _}) ->
     ok = ensure_loaded(ImplMod),
     ok = ensure_loaded(RpcMod),
-    true = lists:all(
-        fun(Name) -> erlang:function_exported(ImplMod, Name, 1) end,
+    lists:foldl(
+        fun(Name, Acc) ->
+            case {erlang:function_exported(ImplMod, Name, 1), Acc} of
+                {true, Acc} ->
+                    Acc;
+                {false, {error, {function_not_exported, L}}} ->
+                    {error, {function_not_exported, [{ImplMod, Name} | L]}};
+                {false, _} ->
+                    {error, {function_not_exported, [{ImplMod, Name}]}}
+            end
+        end,
+        ok,
         RpcMod:get_functions()
-    ),
-    ok.
+    ).
 
 ensure_loaded(Mod) ->
-    case code:is_loaded(Mod) of
-        false -> {module, Mod} = code:load_file(Mod), ok;
-        _ -> ok
+    case code:ensure_loaded(Mod) of
+        {module, Mod} -> ok;
+        E -> E
     end.
