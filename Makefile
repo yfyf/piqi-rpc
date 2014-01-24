@@ -1,5 +1,6 @@
 REBAR ?= rebar
 
+.PHONY: all test deps dialyzer clean distclean
 
 all:
 	$(REBAR) compile
@@ -31,7 +32,3 @@ clean:
 
 distclean: clean
 	rm -rf ebin deps .dialyzer_deps_plt
-
-
-.PHONY: deps
-
