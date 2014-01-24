@@ -34,14 +34,7 @@ start() ->
 
 % @doc stop Piqi-RPC
 stop() ->
-    Res = application:stop(piqi_rpc),
-    % NOTE: can't call this cleanup from piqi_rpc_app:stop() or :prep_stop(),
-    % because of a dead-lock caused by the fact that piqi_rpc_http stores its
-    % routes configuration in application environmnent, and deletion of an entry
-    % from there needs to go through the application controller which is already
-    % busy stopping the application
-    catch piqi_rpc_http:cleanup(),
-    Res.
+    application:stop(piqi_rpc).
 
 
 % @doc stop Piqi-RPC and all dependencies that may have been started by start/0

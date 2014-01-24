@@ -19,16 +19,18 @@
 
 -behaviour(application).
 
--export([start/2, stop/1]).
-
+-export([start/2, prep_stop/1, stop/1]).
 
 %
 % Applicaton callbacks
 %
 
 start(_Type, _StartArgs) ->
+    {ok, _} = piqi_rpc_http:start_listeners(),
     piqi_rpc_sup:start_link().
 
+prep_stop(_State) ->
+    ok = piqi_rpc_http:cleanup().
 
 stop(_State) ->
     ok.

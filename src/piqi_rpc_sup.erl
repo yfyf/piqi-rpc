@@ -36,12 +36,5 @@ start_link() ->
 %
 
 init(_Args) ->
-    PiqiRpcWebServer =
-        {piqi_rpc_http, % Piqi-RPC http server
-            {piqi_rpc_http, start_link, []},
-            permanent, 5000, worker,
-            dynamic % XXX
-        },
-
-    {ok, {{one_for_one, 1, 60}, [PiqiRpcWebServer]}}.
+    {ok, {{one_for_one, 1, 60}, []}}.
 
