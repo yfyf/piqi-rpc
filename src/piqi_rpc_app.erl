@@ -30,7 +30,7 @@ start(_Type, _StartArgs) ->
     piqi_rpc_sup:start_link().
 
 prep_stop(_State) ->
-    ok = piqi_rpc_http:cleanup().
+    ok = piqi_rpc:remove_all_services().
 
 stop(_State) ->
     ok.

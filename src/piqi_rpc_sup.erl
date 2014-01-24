@@ -25,6 +25,7 @@
 
 
 -define(SUPERVISOR, ?MODULE).
+-define(PIQI_RPC_ENV_TABLE, piqi_rpc_env_table).
 
 
 start_link() ->
@@ -33,8 +34,18 @@ start_link() ->
 
 %
 % Supervisor callback
-%
+
+
 
 init(_Args) ->
-    {ok, {{one_for_one, 1, 60}, []}}.
+    %% Table used to maintain registered services, specifically not named,
+    %% to avoid handling name clashes on restarts.
+    TableId = ets:new(
+        ?PIQI_RPC_ENV_TABLE, [set, public]
+    ),
+    ChildSpecs = [
+      {piqi_rpc, {piqi_rpc, start_link, [TableId]},
+        permanent, 5000, worker, [piqi_rpc]}
+    ],
+    {ok, {{one_for_one, 10, 10}, ChildSpecs}}.
 

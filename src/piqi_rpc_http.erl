@@ -31,12 +31,11 @@
 -include("piqi_rpc.hrl").
 
 start_listeners() ->
-    Routes = get_cowboy_routes(),
     cowboy:start_http(
         get_http_env(name),
         get_http_env(nb_acceptors),
         [{port, get_http_env(port)}],
-        [{env, [{dispatch, Routes}]}]
+        [{env, [{dispatch, []}]}]
     ).
 
 configure() ->
