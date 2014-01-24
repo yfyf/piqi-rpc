@@ -26,11 +26,13 @@
 %
 
 start(_Type, _StartArgs) ->
-    {ok, _} = piqi_rpc_http:start_listeners(),
-    piqi_rpc_sup:start_link().
+    {ok, _} = piqi_rpc_http:start_listener(),
+    {ok, Pid} = piqi_rpc_sup:start_link(),
+    {ok, Pid}.
 
 prep_stop(_State) ->
-    ok = piqi_rpc:remove_all_services().
+    ok = piqi_rpc:remove_all_services(),
+    ok = piqi_rpc_http:stop_listener().
 
 stop(_State) ->
     ok.

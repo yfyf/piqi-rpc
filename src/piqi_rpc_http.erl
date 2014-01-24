@@ -20,7 +20,11 @@
 
 -module(piqi_rpc_http).
 
--export([start_listeners/0, cleanup/0]).
+-export([
+    start_listener/0,
+    stop_listener/0,
+    cleanup/0
+]).
 
 -export([add_service/1, remove_service/1, configure/0]).
 
@@ -30,7 +34,7 @@
 
 -include("piqi_rpc.hrl").
 
-start_listeners() ->
+start_listener() ->
     cowboy:start_http(
         get_http_env(name),
         get_http_env(nb_acceptors),
@@ -38,9 +42,18 @@ start_listeners() ->
         [{env, [{dispatch, []}]}]
     ).
 
+stop_listener() ->
+    cowboy:stop_listener(get_http_env(name)).
+
 configure() ->
     Routes = get_cowboy_routes(),
-    cowboy:set_env(get_http_env(name, ?DEFAULT_NAME), dispatch, Routes).
+    configure(Routes).
+
+configure(Routes) ->
+    cowboy:set_env(get_http_env(name), dispatch, Routes).
+
+cleanup() ->
+    configure([]).
 
 get_cowboy_routes() ->
     RpcServices = piqi_rpc:get_services(),
@@ -64,9 +77,6 @@ rpc_service_to_cowboy_route(_RpcService = {ImplMod, RpcMod, UrlPath, Options}) -
         {PathMatch, piqi_rpc_resource, {ImplMod, RpcMod, make_service_options(Options)}},
         {AdjustedPath, piqi_rpc_resource, {ImplMod, RpcMod, make_service_options(Options)}}
     ].
-
-cleanup() ->
-    cowboy:stop_listener(get_http_env(name)).
 
 -spec add_service/1 :: ( piqi_rpc_service() ) -> ok.
 add_service(_RpcService = {_ImplMod, _RpcMod, _UrlPath, _Options}) ->

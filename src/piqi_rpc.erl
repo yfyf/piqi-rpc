@@ -182,16 +182,16 @@ ensure_loaded(Mod) ->
 %% ======================================================================
 
 start_link(EnvTableId) ->
-    gen_server:start_link({local, ?MODULE}, ?MODULE, EnvTableId, []).
+    Res = gen_server:start_link({local, ?MODULE}, ?MODULE, EnvTableId, []),
+    %% Make sure piqi_rpc_http is in sync with what we believe the current
+    %% services are
+    case Res of
+        {ok, _} -> piqi_rpc_http:configure();
+        _ -> ok
+    end,
+    Res.
 
 init(EnvTableId) ->
-    %% It might be a good idea to refresh the cowboy routes here just to be
-    %% sure, however doing something like:
-    %%
-    %%      spawn(fun piqi_rpc_http:configure/0),
-    %%
-    %% seems to cause rare race-conditions with ranch, so leaving it as is for
-    %% now.
     {ok, EnvTableId}.
 
 handle_call({get_env, Key}, _From, EnvTableId) ->
