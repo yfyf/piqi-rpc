@@ -15,30 +15,45 @@
 %%
 %% @doc Piqi-RPC HTTP interface
 %%
-%% Currently it is implemented on top of Webmachine
+%% Currently it is implemented on top of Cowboy.
 %%
 
 -module(piqi_rpc_http).
 
--export([start_link/0, cleanup/0]).
+-export([
+    start_listener/0,
+    stop_listener/0,
+    cleanup/0
+]).
+
 -export([add_service/1, remove_service/1, configure/0]).
-%-compile(export_all).
 
 -define(DEFAULT_PORT, 8080).
 -define(DEFAULT_NAME, piqi_rpc_server).
+-define(DEFAULT_NB_ACCEPTORS, 100).
 
 -include("piqi_rpc.hrl").
 
-start_link() ->
-    Routes = get_cowboy_routes(),
-    cowboy:start_http(get_http_env(name, ?DEFAULT_NAME), get_http_env(nb_acceptors, 100),
-        [{port, get_http_env(port, ?DEFAULT_PORT)}],
-        [{env, [{dispatch, Routes}]}]
+start_listener() ->
+    cowboy:start_http(
+        get_http_env(name),
+        get_http_env(nb_acceptors),
+        [{port, get_http_env(port)}],
+        [{env, [{dispatch, []}]}]
     ).
+
+stop_listener() ->
+    cowboy:stop_listener(get_http_env(name)).
 
 configure() ->
     Routes = get_cowboy_routes(),
-    cowboy:set_env(get_http_env(name, ?DEFAULT_NAME), dispatch, Routes).
+    configure(Routes).
+
+configure(Routes) ->
+    cowboy:set_env(get_http_env(name), dispatch, Routes).
+
+cleanup() ->
+    configure([]).
 
 get_cowboy_routes() ->
     RpcServices = piqi_rpc:get_services(),
@@ -63,10 +78,6 @@ rpc_service_to_cowboy_route(_RpcService = {ImplMod, RpcMod, UrlPath, Options}) -
         {AdjustedPath, piqi_rpc_resource, {ImplMod, RpcMod, make_service_options(Options)}}
     ].
 
-% backward compatibility
-cleanup() ->
-    cowboy:set_env(get_http_env(name, ?DEFAULT_NAME), dispatch, []).
-
 -spec add_service/1 :: ( piqi_rpc_service() ) -> ok.
 add_service(_RpcService = {_ImplMod, _RpcMod, _UrlPath, _Options}) ->
     configure().
@@ -75,7 +86,20 @@ add_service(_RpcService = {_ImplMod, _RpcMod, _UrlPath, _Options}) ->
 remove_service(_RpcService = {_ImplMod, _RpcMod, _UrlPath, _Options}) ->
     configure().
 
+default_http_envs() ->
+    [
+        {port, ?DEFAULT_PORT},
+        {name, ?DEFAULT_NAME},
+        {nb_acceptors, ?DEFAULT_NB_ACCEPTORS}
+    ].
+
 % Utility
+get_http_env(Key) ->
+    get_http_env(
+      Key,
+      proplists:get_value(Key, default_http_envs())
+    ).
+
 get_http_env(Key, Default) ->
     case proplists:get_value(Key, get_env(piqi_rpc, http_server, [])) of
         undefined -> Default;
