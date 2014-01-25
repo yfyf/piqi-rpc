@@ -31,6 +31,7 @@
 -define(DEFAULT_PORT, 8080).
 -define(DEFAULT_NAME, piqi_rpc_server).
 -define(DEFAULT_NB_ACCEPTORS, 100).
+-define(DEFAULT_TRANS_OPTS, []).
 
 -include("piqi_rpc.hrl").
 
@@ -38,7 +39,7 @@ start_listener() ->
     cowboy:start_http(
         get_http_env(name),
         get_http_env(nb_acceptors),
-        [{port, get_http_env(port)}],
+        [{port, get_http_env(port)}|get_http_env(trans_opts)],
         [{env, [{dispatch, []}]}]
     ).
 
@@ -90,7 +91,8 @@ default_http_envs() ->
     [
         {port, ?DEFAULT_PORT},
         {name, ?DEFAULT_NAME},
-        {nb_acceptors, ?DEFAULT_NB_ACCEPTORS}
+        {nb_acceptors, ?DEFAULT_NB_ACCEPTORS},
+        {trans_opts, ?DEFAULT_TRANS_OPTS}
     ].
 
 % Utility
