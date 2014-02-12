@@ -60,7 +60,7 @@ handle(<<"POST">>, Req, State) ->
                 {error, {Code, Message}, _} ->
                     reply(Code, [], Message, Req2, State)
             end;
-        {error, Reason} ->
+        {error, _Reason} ->
             reply(400, [], <<"invalid input">>, Req, State)
     end;
 handle(_Method, Req, State) ->
@@ -98,19 +98,19 @@ rpc(Req, State = #rpc_state{rpc_mod = RpcMod, impl_mod =ImplMod, options = Optio
 
         % input-related errors:
         {'rpc_error', 'unknown_function'} ->
-            reply(404, [], <<"unknown function: ", Function/binary>>, Req3, State);
+            int_error_reply(404, <<"unknown function: ", Function/binary>>, Req3, State);
         {'rpc_error', 'missing_input'} ->
-            reply(411, [], <<"non-empty input expected">>, Req3, State);
+            int_error_reply(411, <<"non-empty input expected">>, Req3, State);
         {'rpc_error', {'invalid_input', Err}} ->
-            reply(400, [], Err, Req3, State);
+            int_error_reply(400, Err, Req3, State);
 
         % server errors:
         {'rpc_error', {'invalid_output', Err}} ->
-            reply(411, [], Err, Req3, State);
+            int_error_reply(411, Err, Req3, State);
         {'rpc_error', {'internal_error', Err}} ->
-            reply(500, [], Err, Req3, State);
+            int_error_reply(500, Err, Req3, State);
         {'rpc_error', {'service_unavailable', Err}} ->
-            reply(503, [], Err, Req3, State)
+            int_error_reply(503, Err, Req3, State)
     end.
 
 %%--------------------------------------------------------------------
@@ -163,6 +163,12 @@ error_response(OutputFormat, ErrorData, Req2, State) ->
         _ ->
             reply(500, [format_to_content_type(OutputFormat)], ErrorData, Req2, State)
     end.
+
+%% Wrapper for internal error replies (such as invalid input)
+int_error_reply(Code, ErrorBody, Req, State) ->
+    Headers =[format_to_content_type(text)],
+    Body = [<<"Piqi-RPC: ">>, ErrorBody],
+    reply(Code, Headers, Body, Req, State).
 
 reply(Code, Headers, Body, Req, State) ->
     {ok, Req2} = cowboy_req:reply(Code, Headers, Body, Req),
