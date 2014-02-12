@@ -158,9 +158,9 @@ get_output_format(Req) ->
 
 error_response(OutputFormat, ErrorData, Req2, State) ->
     case cowboy_req:header(<<"x-piqi-rpc-return-http-status-via-header">>, Req2) of
-        <<"true">> ->
-            reply(200, [{<<"X-Piqi-RPC-http-status">>, <<"500">>}, format_to_content_type(OutputFormat)], ErrorData, Req2, State);
-        _ ->
+        {<<"true">>, Req3} ->
+            reply(200, [{<<"X-Piqi-RPC-http-status">>, <<"500">>}, format_to_content_type(OutputFormat)], ErrorData, Req3, State);
+        _Other ->
             reply(500, [format_to_content_type(OutputFormat)], ErrorData, Req2, State)
     end.
 
