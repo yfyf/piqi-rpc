@@ -60,7 +60,7 @@ handle(<<"POST">>, Req, State) ->
                 {error, {Code, Message}, _} ->
                     reply(Code, [], Message, Req2, State)
             end;
-        {error, Reason} ->
+        {error, _Reason} ->
             reply(400, [], <<"invalid input">>, Req, State)
     end;
 handle(_Method, Req, State) ->
