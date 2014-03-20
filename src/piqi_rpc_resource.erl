@@ -54,7 +54,7 @@ handle(<<"POST">>, Req, State) ->
                     case get_output_format(InputFormat, Req3) of
                         {ok, OutputFormat, Req4} ->
                             rpc(Req4, State, InputFormat, OutputFormat, Body);
-                        {error, {Code, Message, Req4}} ->
+                        {error, {Code, Message}, Req4} ->
                             reply(Code, [], Message, Req4, State)
                     end;
                 {error, {Code, Message}, _} ->
