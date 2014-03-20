@@ -20,18 +20,19 @@
 
 -include_lib("piqi/include/piqi_tools.hrl").
 
+-type url_path() :: string().
 
 % Piqi-RPC service
 -type piqi_rpc_service() :: {
     ImplMod :: atom(),
     RpcMod :: atom(),
-    UrlPath :: string(),
+    UrlPath :: url_path(),
     Options :: piqi_rpc_options() }.
 
 
 % Piqi-RPC service definition; see `piqi_rpc.app.src` file for details.
 -type piqi_rpc_service_def() ::
-     {ImplMod :: atom(), RpcMod :: atom(), UrlPath :: string()}
+     {ImplMod :: atom(), RpcMod :: atom(), UrlPath :: url_path()}
     | piqi_rpc_service().
 
 

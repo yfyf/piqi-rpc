@@ -117,7 +117,7 @@ remove_all_services() ->
 get_services() ->
     [Def || {_Url, Def} <- get_service_defs()].
 
--spec get_service_defs/0 :: () -> [piqi_rpc_service_def()].
+-spec get_service_defs/0 :: () -> [{url_path(), piqi_rpc_service_def()}].
 get_service_defs() ->
     {ok, Defs} = get_env('rpc_services'),
     Defs.
