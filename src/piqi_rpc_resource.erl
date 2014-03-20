@@ -9,6 +9,8 @@
     options
 }).
 
+-define(DEFAULT_OUTPUT_FORMAT, piq).
+
 %%--------------------------------------------------------------------
 %% API
 %%--------------------------------------------------------------------
@@ -150,7 +152,7 @@ get_output_format(Req) ->
         {ok, undefined, Req2} ->
             {undefined, Req2};
         {ok, [{{Type, SubType, _}, _, _} | _T], Req2} ->
-            {content_type_to_format(Type, SubType), Req2};
+            {content_type_to_format(Type, SubType, ?DEFAULT_OUTPUT_FORMAT), Req2};
         _ ->
             {undefined, Req}
     end,
